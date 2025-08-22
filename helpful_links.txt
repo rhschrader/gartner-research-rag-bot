@@ -1,0 +1,3 @@
+1. Parsing PDFS: https://cookbook.openai.com/examples/parse_pdf_docs_for_rag
+2. Pinecone example with OpenAI and Langchan https://colab.research.google.com/github/pinecone-io/examples/blob/master/docs/langchain-retrieval-augmentation.ipynb
+3. Managed service that does this: https://www.morphik.ai/docs/blogs/stop-parsing-docs 
