@@ -51,8 +51,10 @@ class LLM_PDF_Processor:
 
         return all_images
 
-    def convert_doc_to_images(self, path):
-        images = convert_from_path(path, dpi = self.dpi)
+    def convert_doc_to_images(self, path, dpi = None):
+        if not dpi:
+            dpi = self.dpi
+        images = convert_from_path(path, dpi = dpi)
         return images
 
 

@@ -35,7 +35,7 @@ for fname in os.listdir(data_dir):
 
             # Step 4: Save images of the pdf to return later in responses
             print(f"\nSaving {len(images)} images of {fname} ...\n")
-            images_high_res = parser.convert_doc_to_images(path, dpi=200)
+            images_high_res = parser.convert_doc_to_images(fpath, dpi=200)
             paths = parser.save_pdf_images(images_high_res, fname)
 
             # Step 5: Analyze images of the pdf file using an LLM

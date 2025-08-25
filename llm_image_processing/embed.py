@@ -5,6 +5,7 @@ from openai import OpenAI
 from typing import List
 from uuid import uuid4
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 # Load environment variables
 load_dotenv()
@@ -56,7 +57,7 @@ class Embed_Upsert:
         return response.data[0].embedding
 
     def embed_pdf(self, pages_description):
-        for page in pages_description:
+        for page in tqdm(pages_description):
             page['embedding'] = self.get_embedding(page['description'])
         return pages_description
 
