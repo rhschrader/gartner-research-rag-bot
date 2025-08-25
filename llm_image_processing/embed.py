@@ -54,3 +54,26 @@ class Embed_Upsert:
             dimensions=self.embedding_dimension
         )
         return response.data[0].embedding
+
+    def embed_pdf(self, pages_description):
+        for page in pages_description:
+            page['embedding'] = embedder.get_embedding(page['description'])
+        return pages_description
+
+    def upsert_to_pinecone(self, pages_description):
+        vectors = []
+        for page in pages_description:
+            vector = {
+                "id": str(uuid4()),
+                "values": page['embedding'],
+                "metadata": {
+                    "source": page['source'],
+                    "page" : page['page'],
+                    "text" : page['description']
+                }
+            }
+            vectors.append(vector)
+        
+        # Upsert PDF data
+        index.upsert(vectors=vectors)
+        print(f"Upserted {len(vectors)} vectors")        

@@ -9,6 +9,7 @@ from pdfminer.high_level import extract_text
 import base64
 import io
 import os
+from pathlib import Path
 import concurrent.futures
 from tqdm import tqdm
 from openai import OpenAI
@@ -108,8 +109,8 @@ class LLM_PDF_Processor:
          Page descriptions will be embedded for RAG
         
         """
-        
-        pages_description = {'source':[], 'page':[], 'description':[]}
+        # list to store dicts of source, page, description
+        pages_description = []
 
         # concurrent execution
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
@@ -127,9 +128,35 @@ class LLM_PDF_Processor:
 
             for index, f in enumerate(futures):
                 res = f.result()
-                pages_description['source'].append(fname)
-                pages_description['page'].append(index)
-                pages_description['description'].append(res)
+                pages_description.append({'source': fname, 'page': index+1, 'description': res})
 
         return pages_description
+
+        ## Save images of documents
+        def save_pdf_images(self, images, fname, output_dir='/mnt/data/gartner_pdf_images'):
+            """
+            Save a list of images with filenames that include the PDF name and page number.
+            
+            Args:
+                image_list: List of tuples containing (image_data, page_number)
+                pdf_name: Original PDF file name (e.g. "report.pdf")
+                output_dir: Directory where images will be saved
+
+            Returns:
+                List of paths to the saved images
+            """
+            os.makedirs(output_dir, exist_ok=True)
+
+            image_paths = []
+
+            for index, image_data in enumerate(image_list):
+                image_filename = f"{Path(pdf_name).stem}_page_{index + 1}.png"
+                image_path = os.path.join(output_dir, image_filename)
+                
+                # Assuming image_data is a PIL Image object or similar
+                image_data.save(image_path)
+
+                image_paths.append(image_path)
+
+            return image_paths
                 
