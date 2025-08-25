@@ -22,8 +22,7 @@ from rich import print
 from dotenv import load_dotenv
 from ast import literal_eval
 from dataclasses import dataclass
-#from ..embed.check_pinecone import check_file_in_pinecone
-from pdf_analyze_prompt import pdf_analyze_prompt
+from prompts.pdf_analyze_prompt import pdf_analyze_prompt
 
 # Load environment variables
 load_dotenv()
