@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from pinecone import Pinecone
 import re
 import pandas as pd
-from rag_prompt import rag_prompt
+from prompts.rag_prompt import rag_prompt
 
 # Load environment variables
 load_dotenv()
