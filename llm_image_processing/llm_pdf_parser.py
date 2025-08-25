@@ -29,7 +29,7 @@ from pdf_analyze_prompt import pdf_analyze_prompt
 load_dotenv()
 
 class LLM_PDF_Processor:
-    def __init__(self, data_dir, llm_model = 'gpt-5-mini', embedding_model = 'text-embedding-3-small', dpi = 50):
+    def __init__(self, data_dir, llm_model = 'gpt-5-mini', embedding_model = 'text-embedding-3-small', dpi = 100):
         self.data_dir = data_dir
         self.pdf_analyze_prompt = pdf_analyze_prompt
         self.llm_model = llm_model
