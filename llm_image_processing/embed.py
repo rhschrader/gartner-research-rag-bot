@@ -20,12 +20,12 @@ class Embed_Upsert:
     def initialize_pinecone(self):
         
         pinecone_api_key = os.getenv("PINECONE_API_KEY")
-        pinecone_index_name = os.getenv("PINECONE_INDEX_NAME")
+        pinecone_index_name = os.getenv("PINECONE_LLM_INDEX_NAME")
         
         # Initialize Pinecone
         self.pc = Pinecone(api_key = pinecone_api_key)
         # Connect to the index
-        self.index = pc.Index(pinecone_index_name)
+        self.index = self.pc.Index(pinecone_index_name)
     
     def initialize_openai(self):
         openai_key = os.getenv("OPENAI_API_KEY")
@@ -57,7 +57,7 @@ class Embed_Upsert:
 
     def embed_pdf(self, pages_description):
         for page in pages_description:
-            page['embedding'] = embedder.get_embedding(page['description'])
+            page['embedding'] = self.get_embedding(page['description'])
         return pages_description
 
     def upsert_to_pinecone(self, pages_description):
@@ -75,5 +75,5 @@ class Embed_Upsert:
             vectors.append(vector)
         
         # Upsert PDF data
-        index.upsert(vectors=vectors)
+        self.index.upsert(vectors=vectors)
         print(f"Upserted {len(vectors)} vectors")        

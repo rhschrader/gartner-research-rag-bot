@@ -18,11 +18,11 @@ counter = 1
 
 for fname in os.listdir(data_dir):
 
-    fpath = os.path.join(fpath, fname)
+    fpath = os.path.join(data_dir, fname)
     print(f"\n\n----------------------\nOn file {counter} / {total_files}\n----------------------\n\n")
 
     # Check that it is a file and is a pdf
-    if os.path.isfile(fpath) & fname.split(".")[-1] == "pdf":
+    if os.path.isfile(fpath) & (fname.split(".")[-1] == "pdf"):
         
         # Check that the file isn't already in Pinecone
         if embedder.check_file_in_pinecone(fname):
@@ -34,7 +34,7 @@ for fname in os.listdir(data_dir):
             images = parser.convert_doc_to_images(fpath)
 
             # Step 4: Save images of the pdf to return later in responses
-            print(f"\nSaving {len(fname)} images of {fname} ...\n")
+            print(f"\nSaving {len(images)} images of {fname} ...\n")
             paths = parser.save_pdf_images(images, fname)
 
             # Step 5: Analyze images of the pdf file using an LLM
@@ -46,7 +46,7 @@ for fname in os.listdir(data_dir):
             pages_embeddings = embedder.embed_pdf(pages_description)
 
             # Step 7: Upsert embeddings to pinecone
-            print(f"Upserting {len(pages_embeddings['embedding'])} to Pinecone")
+            print(f"\nUpserting to Pinecone\n")
             embedder.upsert_to_pinecone(pages_description)
     
     counter += 1

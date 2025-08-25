@@ -19,15 +19,14 @@ from sklearn.metrics.pairwise import cosine_similarity
 import json
 import numpy as np
 from rich import print
+from dotenv import load_dotenv
 from ast import literal_eval
 from dataclasses import dataclass
-from embed.check_pinecone import check_file_in_pinecone
+#from ..embed.check_pinecone import check_file_in_pinecone
 from pdf_analyze_prompt import pdf_analyze_prompt
 
-@dataclass
-class DocumentChunk:
-    content: str
-    metadata: Dict[str, str]
+# Load environment variables
+load_dotenv()
 
 class LLM_PDF_Processor:
     def __init__(self, data_dir, llm_model = 'gpt-5-mini', embedding_model = 'text-embedding-3-small', dpi = 50):
@@ -36,7 +35,12 @@ class LLM_PDF_Processor:
         self.llm_model = llm_model
         self.embedding_model = embedding_model
         self.dpi = dpi
+        self.initialize_openai()
 
+    def initialize_openai(self):
+        openai_key = os.getenv("OPENAI_API_KEY")
+        self.client = OpenAI(api_key = openai_key)
+    
     def convert_doc_to_images_chunked(self, path, chunk_size=2):
     
         reader = PdfReader(path)
@@ -66,7 +70,7 @@ class LLM_PDF_Processor:
 
 
     def analyze_image(self, data_uri):
-        response = client.chat.completions.create(
+        response = self.client.chat.completions.create(
             model=self.llm_model,
             messages=[
                 {"role": "system", "content": self.pdf_analyze_prompt},
@@ -132,31 +136,31 @@ class LLM_PDF_Processor:
 
         return pages_description
 
-        ## Save images of documents
-        def save_pdf_images(self, images, fname, output_dir='/mnt/data/gartner_pdf_images'):
-            """
-            Save a list of images with filenames that include the PDF name and page number.
+    ## Save images of documents
+    def save_pdf_images(self, images, fname, output_dir='/mnt/data/gartner_pdf_images'):
+        """
+        Save a list of images with filenames that include the PDF name and page number.
+        
+        Args:
+            image_list: List of tuples containing (image_data, page_number)
+            pdf_name: Original PDF file name (e.g. "report.pdf")
+            output_dir: Directory where images will be saved
+
+        Returns:
+            List of paths to the saved images
+        """
+        os.makedirs(output_dir, exist_ok=True)
+
+        image_paths = []
+
+        for index, image_data in enumerate(images):
+            image_filename = f"{Path(fname).stem}_page_{index + 1}.png"
+            image_path = os.path.join(output_dir, image_filename)
             
-            Args:
-                image_list: List of tuples containing (image_data, page_number)
-                pdf_name: Original PDF file name (e.g. "report.pdf")
-                output_dir: Directory where images will be saved
+            # Assuming image_data is a PIL Image object or similar
+            image_data.save(image_path)
 
-            Returns:
-                List of paths to the saved images
-            """
-            os.makedirs(output_dir, exist_ok=True)
+            image_paths.append(image_path)
 
-            image_paths = []
-
-            for index, image_data in enumerate(image_list):
-                image_filename = f"{Path(pdf_name).stem}_page_{index + 1}.png"
-                image_path = os.path.join(output_dir, image_filename)
-                
-                # Assuming image_data is a PIL Image object or similar
-                image_data.save(image_path)
-
-                image_paths.append(image_path)
-
-            return image_paths
+        return image_paths
                 
