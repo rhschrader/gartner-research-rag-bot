@@ -1,5 +1,4 @@
 import streamlit as st
-#from render_pdf_page import render_pdf_page
 from rag_chat import Rag_Chat
 
 rag = Rag_Chat()

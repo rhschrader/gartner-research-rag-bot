@@ -13,15 +13,8 @@ from pathlib import Path
 import concurrent.futures
 from tqdm import tqdm
 from openai import OpenAI
-import re
-import pandas as pd 
-from sklearn.metrics.pairwise import cosine_similarity
-import json
-import numpy as np
 from rich import print
 from dotenv import load_dotenv
-from ast import literal_eval
-from dataclasses import dataclass
 from prompts.pdf_analyze_prompt import pdf_analyze_prompt
 
 # Load environment variables
