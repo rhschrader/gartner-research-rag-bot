@@ -26,6 +26,8 @@ for fname in os.listdir(data_dir):
         
         # Check that the file isn't already in Pinecone
         if embedder.check_file_in_pinecone(fname):
+            print(f"{fname} already stored in Pinecone")
+            counter += 1
             continue
         
         else:
