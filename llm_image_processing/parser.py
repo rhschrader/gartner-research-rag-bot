@@ -31,37 +31,15 @@ class LLM_PDF_Processor:
 
     def initialize_openai(self):
         openai_key = os.getenv("OPENAI_API_KEY")
-        self.client = OpenAI(api_key = openai_key)
-    
-    def convert_doc_to_images_chunked(self, path, chunk_size=2):
-    
-        reader = PdfReader(path)
-        total_pages = len(reader.pages)
 
-        all_images = []
-        for start_page in range(1, total_pages + 1, chunk_size):
-            end_page = min(start_page + chunk_size - 1, total_pages)
-            images = convert_from_path(
-                path,
-                first_page=start_page,
-                last_page=end_page,
-                dpi = self.dpi
-            )
-            all_images.extend(images)
-
-        return all_images
+        # Implementing flex processing, see https://platform.openai.com/docs/guides/flex-processing?api-mode=responses 
+        self.client = OpenAI(api_key = openai_key, timeout=900.0) 
 
     def convert_doc_to_images(self, path, dpi = None):
         if not dpi:
             dpi = self.dpi
         images = convert_from_path(path, dpi = dpi)
         return images
-
-
-    def extract_text_from_doc(self, path):
-        text = extract_text(path)
-        return text
-
 
     def analyze_image(self, data_uri):
         response = self.client.chat.completions.create(
@@ -79,7 +57,8 @@ class LLM_PDF_Processor:
                         }
                     ]
                     },
-            ]
+            ],
+            service_tier="flex" # flex processing to save $$
         )
         return response.choices[0].message.content
 

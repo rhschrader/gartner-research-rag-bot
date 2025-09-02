@@ -6,6 +6,7 @@ from typing import List
 from uuid import uuid4
 from dotenv import load_dotenv
 from tqdm import tqdm
+#import concurrent.futures
 
 # Load environment variables
 load_dotenv()
@@ -56,9 +57,11 @@ class Embed_Upsert:
         )
         return response.data[0].embedding
 
+    # Come back to make this concurrent
     def embed_pdf(self, pages_description):
         for page in tqdm(pages_description):
             page['embedding'] = self.get_embedding(page['description'])
+
         return pages_description
 
     def upsert_to_pinecone(self, pages_description):

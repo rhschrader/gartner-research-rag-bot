@@ -5,15 +5,18 @@ from pinecone import Pinecone
 import re
 import pandas as pd
 from prompts.rag_prompt import rag_prompt
+import fitz  # PyMuPDF
+from pathlib import Path
 
 # Load environment variables
 load_dotenv()
 
 class Rag_Chat:
-    def __init__(self, top_k = 5, embedding_dimension = 1536, embedding_model = 'text-embedding-3-small'):
+    def __init__(self, top_k = 8, embedding_dimension = 1536, embedding_model = 'text-embedding-3-small', chat_model='gpt-5-mini'):
         self.top_k = top_k
         self.embedding_dimension = embedding_dimension
         self.embedding_model = embedding_model
+        self.chat_model = chat_model
         self.rag_prompt = rag_prompt
         self.initialize_pinecone()
         self.initialize_openai()
@@ -58,7 +61,7 @@ class Rag_Chat:
 
 
         response = self.client.responses.create(
-            model="gpt-5",
+            model=self.chat_model,
             input=messages,
             previous_response_id = self.previous_response_id
         )
@@ -109,3 +112,62 @@ class Rag_Chat:
         else:
             print("Image path does not exist")
             return None
+
+    def render_pdf_page(self, pdf_name: str, page_number: int, data_dir: str = "/mnt/data/gartner-research-rag-bot", output_dir: str = "page_images") -> str:
+        """
+        Render a specific page from a PDF (by filename) to an image.
+        
+        Args:
+            pdf_name: PDF file name (e.g. "report.pdf")
+            page_number: 1-based page number to render
+            data_dir: Directory where PDFs are stored
+            output_dir: Directory where images will be saved
+
+        Returns:
+            Path to the saved image
+        """
+        os.makedirs(output_dir, exist_ok=True)
+
+        pdf_path = os.path.join(data_dir, pdf_name)
+        doc = fitz.open(pdf_path)
+
+        page_index = page_number - 1
+        if page_index < 0 or page_index >= len(doc):
+            raise ValueError(f"Invalid page number: {page_number} for {pdf_name}")
+
+        page = doc.load_page(page_index)
+        pix = page.get_pixmap(matrix=fitz.Matrix(2,2))  # 2x zoom for better resolution
+
+        image_filename = f"{Path(pdf_name).stem}_page_{page_number}.png"
+        image_path = os.path.join(output_dir, image_filename)
+        pix.save(image_path)
+
+        return image_path
+
+    import os
+
+    def render_pdf_page_debug(self, pdf_name, page_number, data_dir: str = "/mnt/data/gartner-research-rag-bot", output_dir: str = "page_images") -> str:
+        
+        os.makedirs(output_dir, exist_ok=True)
+        pdf_path = os.path.join(data_dir, pdf_name)
+
+        if not os.path.exists(pdf_path):
+            raise FileNotFoundError(f"PDF not found: {pdf_path}")
+
+        doc = fitz.open(pdf_path)
+
+        page_index = page_number - 1
+        if page_index < 0 or page_index >= len(doc):
+            raise ValueError(f"Invalid page number: {page_number} for {pdf_name}")
+
+        page = doc.load_page(page_index)
+        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+
+        image_filename = f"{Path(pdf_name).stem}_page_{page_number}.png"
+        image_path = os.path.join(output_dir, image_filename)
+
+        pix.save(image_path)
+
+        return image_path
+
+

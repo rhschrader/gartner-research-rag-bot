@@ -37,10 +37,15 @@ with col2:
     if citations:
         st.header("📄 Source Pages")
         for citation in citations:
-            #pdf_path = os.path.join("data", citation["source"])  # assuming PDFs live in ./data/
+            pdf_name = citation['source']
+            page = int(citation['page'])
+            #print(f"Document: {citation['source']}\t Page: {citation['page']}")
+            print(f"Document: {pdf_name}\t Page: {page}")
             try:
-                image_path = rag.get_pdf_image(citation)
-                st.image(image_path, caption=f"📄 {citation['source']} – Page {int(citation['page'])}", width=600)
+                #image_path = rag.get_pdf_image(citation)
+                image_path = rag.render_pdf_page_debug(pdf_name, page)
+                #st.image(image_path, caption=f"📄 {citation['source']} – Page {int(citation['page'])}")#, width=600)
+                st.image(image_path, caption=f"📄 {pdf_name} – Page {int(page)}")#, width=600)
             except Exception as e:
                 st.warning(f"Couldn't load page image: {e}")
             
