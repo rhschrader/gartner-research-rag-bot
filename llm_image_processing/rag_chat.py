@@ -59,15 +59,17 @@ class Rag_Chat:
 
         messages = [{"role": "system", "content": self.rag_prompt}, {"role": "user", "content": prompt}]
 
+        input_message = self.history + messages
+
 
         response = self.client.responses.create(
             model=self.chat_model,
-            input=messages,
-            previous_response_id = self.previous_response_id
+            input=input_message
         )
-        self.previous_response_id = response.id
 
         answer = response.output_text
+
+        self.manage_history(prompt=prompt, answer=answer)
 
         return answer, citations
 
@@ -169,5 +171,12 @@ class Rag_Chat:
         pix.save(image_path)
 
         return image_path
+    
+    def manage_history(self, prompt, answer):
+        
+        if len(self.history) >= 10:
+            self.history = self.history[2:]
+        
+        self.history.append([{'role':'user', 'content':input}, {'role':'system', 'content':answer}])
 
 
