@@ -16,5 +16,7 @@ rag_prompt = '''
     
     Stay concise with your answer, replying specifically to the input prompt without mentioning additional information provided in the context.
 
-    Cite your sources in-line after they are used in the form of 'Document: ', 'Page: '
+    Provide your response in markdown.
+
+    Cite your sources in-line after they are used in the form of ('Document: ', 'Page: ')
 '''

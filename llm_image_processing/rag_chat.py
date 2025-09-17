@@ -5,6 +5,7 @@ from pinecone import Pinecone
 import re
 import pandas as pd
 from prompts.rag_prompt import rag_prompt
+from prompts.rag_check_prompt import rag_check_prompt, rag_not_needed_prompt
 import fitz  # PyMuPDF
 from pathlib import Path
 
@@ -18,6 +19,8 @@ class Rag_Chat:
         self.embedding_model = embedding_model
         self.chat_model = chat_model
         self.rag_prompt = rag_prompt
+        self.rag_check_prompt = rag_check_prompt
+        self.rag_not_needed_prompt = rag_not_needed_prompt
         self.initialize_pinecone()
         self.initialize_openai()
         self.history = []
@@ -44,13 +47,28 @@ class Rag_Chat:
             source = c['source']
             page = c['page']
             text = c['text']
-            citation = f"[Source: {source}, Page: {page}]"
+            citation = f"[Source: {source}, Page: {int(page)}]"
             citations.append({"source":source, "page":page})
             context_lines.append(f"Citation: {citation}\nText: {text}")
         context_text = "\n\n---\n\n".join(context_lines)
         prompt = f"INPUT PROMPT:\n{query}\n-------\nCONTENT:\n{context_text}"
 
         return prompt, citations
+
+    def generate_messages(self, query, history):
+        
+        check = self.rag_needed_check(query, history)
+
+        if check == True:
+            context = self.retrieve_context(query)
+            prompt, citations = self.build_prompt(context, query)
+
+            messages = [{"role": "system", "content": self.rag_prompt}, {"role": "user", "content": prompt}]
+            
+            return messages, citations
+        else:
+            messages = [{"role":"system", "content":self.rag_not_needed_prompt}, {"role": "user", "content": query}]
+            return messages, None
 
     def generate_answer(self, query):
         context = self.retrieve_context(query)
@@ -70,6 +88,21 @@ class Rag_Chat:
         answer = response.output_text
 
         return answer, citations
+
+    def rag_needed_check(self, query, history):
+        chat_input = history + [{"role": "system", "content": self.rag_check_prompt}, {"role": "user", "content": query}]
+        response = self.client.responses.create(
+            model=self.chat_model,
+            input=chat_input
+        )
+        print(f"\n\nQUERY: {query}\n\nYES-NO: {response.output_text}\n\n")
+        if response.output_text.lower() == "yes":
+            return True
+        elif response.output_text.lower() == "no":
+            return False
+        else:
+            print(f"Error: Did not receive YES or NO\n\nReceived: {response.output_text}\n\nDefaulting to RAG\n")
+            return True
 
     def get_query_embedding(self, query):
         response = self.client.embeddings.create(
