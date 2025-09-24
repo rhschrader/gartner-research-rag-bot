@@ -5,8 +5,9 @@ from pinecone import Pinecone
 import re
 import pandas as pd
 from prompts.rag_prompt import rag_prompt
-from prompts.rag_check_prompt import rag_check_prompt, rag_not_needed_prompt
-import fitz  # PyMuPDF
+#from prompts.rag_check_prompt import rag_check_prompt, rag_not_needed_prompt
+from prompts.follow_up_prompt import follow_up_prompt
+import fitz
 from pathlib import Path
 
 # Load environment variables
@@ -19,8 +20,9 @@ class Rag_Chat:
         self.embedding_model = embedding_model
         self.chat_model = chat_model
         self.rag_prompt = rag_prompt
-        self.rag_check_prompt = rag_check_prompt
-        self.rag_not_needed_prompt = rag_not_needed_prompt
+        #self.rag_check_prompt = rag_check_prompt
+        #self.rag_not_needed_prompt = rag_not_needed_prompt
+        self.follow_up_prompt = follow_up_prompt
         self.initialize_pinecone()
         self.initialize_openai()
         self.history = []
@@ -41,7 +43,7 @@ class Rag_Chat:
         openai_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key = openai_key)
 
-    def build_prompt(self, context, query):
+    def build_user_prompt(self, context, query):
         context_lines = []
         citations = []
         for c in context:
@@ -56,33 +58,26 @@ class Rag_Chat:
 
         return prompt, citations
 
-    def generate_messages(self, query, history):
+    def generate_messages(self, query, history, context):
         
-        check = self.rag_needed_check(query, history)
+        #check = self.rag_needed_check(query, history)
+        messages = [{"role": "system", "content": self.rag_prompt}]
 
-        if check == True:
-            context = self.retrieve_context(query)
-            prompt, self.citations = self.build_prompt(context, query)
+        messages.extend(history)
 
-            messages = [{"role": "system", "content": self.rag_prompt}, {"role": "user", "content": prompt}]
-            
-            return messages, self.citations
-        else:
-            messages = [{"role":"system", "content":self.rag_not_needed_prompt}, {"role": "user", "content": query}]
-            return messages, self.citations
+        prompt, self.citations = self.build_user_prompt(context, query)
 
-    def generate_answer(self, query):
-        context = self.retrieve_context(query)
-        prompt, citations = self.build_prompt(context, query)
+        messages.append({"role": "user", "content": prompt})
 
+        return messages
 
-        messages = [{"role": "system", "content": self.rag_prompt}, {"role": "user", "content": prompt}]
+    def generate_answer(self, query, history, context):
+        messages = self.generate_messages(query, history, context)
 
 
         response = self.client.responses.create(
             model=self.chat_model,
             input=messages,
-            previous_response_id = self.previous_response_id
         )
         self.previous_response_id = response.id
 
@@ -90,23 +85,31 @@ class Rag_Chat:
 
         return answer, citations
 
-    # Checks if the question needs new Gartner context, or if it should rely on the previous conversation history
-    # If the user asks about the last response, it confuses the LLM when getting new, unrelated context
-    def rag_needed_check(self, query, history):
-        chat_input = history + [{"role": "system", "content": self.rag_check_prompt}, {"role": "user", "content": query}]
-        response = self.client.responses.create(
-            model=self.chat_model,
-            input=chat_input
-        )
-        print(f"\n\nQUERY: {query}\n\nYES-NO: {response.output_text}\n\n")
-        if response.output_text.lower() == "yes":
-            return True
-        elif response.output_text.lower() == "no":
+    def is_follow_up_question(self, prompt, history):
+        """
+        Checks if a user's prompt is a follow-up question based on the conversation history.
+        """
+        if not history:
             return False
-        else:
-            print(f"Error: Did not receive YES or NO\n\nReceived: {response.output_text}\n\nDefaulting to RAG\n")
-            return True
 
+        # Format the conversation history for the prompt
+        formatted_history = "\n".join([f"{msg['role']}: {msg['content']}" for msg in history])
+
+        # Create the prompt for the language model
+        prompt_for_llm = self.follow_up_prompt.format(history=formatted_history, prompt=prompt)
+
+        # Call gpt-5-mini
+        response = self.client.responses.create(
+            model=self.chat_model, 
+            input=[{"role": "user", "content": prompt_for_llm}],
+        )
+
+        # Parse the response
+        decision = response.output_text.strip().lower()
+        print(f"\n\nWas this a follow up: {decision}")
+        return decision == "yes"
+
+    
     def get_query_embedding(self, query):
         response = self.client.embeddings.create(
             input=[query],
@@ -149,40 +152,7 @@ class Rag_Chat:
             print("Image path does not exist")
             return None
 
-    def render_pdf_page(self, pdf_name: str, page_number: int, data_dir: str = "/mnt/data/gartner-research-rag-bot", output_dir: str = "page_images") -> str:
-        """
-        Render a specific page from a PDF (by filename) to an image.
-        
-        Args:
-            pdf_name: PDF file name (e.g. "report.pdf")
-            page_number: 1-based page number to render
-            data_dir: Directory where PDFs are stored
-            output_dir: Directory where images will be saved
-
-        Returns:
-            Path to the saved image
-        """
-        os.makedirs(output_dir, exist_ok=True)
-
-        pdf_path = os.path.join(data_dir, pdf_name)
-        doc = fitz.open(pdf_path)
-
-        page_index = page_number - 1
-        if page_index < 0 or page_index >= len(doc):
-            raise ValueError(f"Invalid page number: {page_number} for {pdf_name}")
-
-        page = doc.load_page(page_index)
-        pix = page.get_pixmap(matrix=fitz.Matrix(2,2))  # 2x zoom for better resolution
-
-        image_filename = f"{Path(pdf_name).stem}_page_{page_number}.png"
-        image_path = os.path.join(output_dir, image_filename)
-        pix.save(image_path)
-
-        return image_path
-
-    import os
-
-    def render_pdf_page_debug(self, pdf_name, page_number, data_dir: str = "/mnt/data/gartner-research-rag-bot", output_dir: str = "page_images") -> str:
+    def render_pdf_page(self, pdf_name, page_number, data_dir: str = "/mnt/data/gartner-research-rag-bot", output_dir: str = "page_images") -> str:
         
         os.makedirs(output_dir, exist_ok=True)
         pdf_path = os.path.join(data_dir, pdf_name)

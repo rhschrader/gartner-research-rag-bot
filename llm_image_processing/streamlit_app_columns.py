@@ -17,21 +17,25 @@ with col1:
     # Initialize chat history
     if "messages" not in st.session_state:
         st.session_state.messages = []
+    
+    if "context" not in st.session_state:
+        st.session_state.context = []
 
-    citations = []
+    if "citations" not in st.session_state:
+        st.session_state.citations = []
+
     
     # Accept user input
     if prompt := st.chat_input("Type your message..."):
         # Add user message to chat history
-        #st.session_state.messages.append({"role": "user", "content": prompt})
-        #print(prompt)
+        st.session_state.messages.append({"role": "user", "content": prompt})
         
         # Display user message in chat message container
         with st.chat_message("user"):
             st.markdown(prompt)
 
         # Get bot response
-        with st.chat_message("system"):
+        with st.chat_message("assistant"):
 
             with st.spinner("Thinking..."):
                 
@@ -39,14 +43,20 @@ with col1:
                         {"role": m["role"], "content": m["content"]}
                         for m in st.session_state.messages
                     ]
+                is_follow_up = rag.is_follow_up_question(prompt, st.session_state.messages[:-1])
 
-                messages, citations = rag.generate_messages(prompt, chat_input) 
+                # If it's not a follow-up, retrieve new context
+                if not is_follow_up:
+                    st.session_state.context = rag.retrieve_context(prompt)
+
+                #response = rag_chat(prompt, st.session_state.messages, st.session_state.context)
+                messages, st.session_state.citations = rag.generate_messages(prompt, st.session_state.messages, st.session_state.context) 
 
                 chat_input += messages
 
                 response = client.responses.create(
                     model=rag.chat_model,
-                    input=chat_input
+                    input=messages
                 )
 
                 response = response.output_text
@@ -59,17 +69,13 @@ with col1:
 
 with col2:
             
-    if citations:
+    if st.session_state.citations:
         st.header("📄 Source Pages")
-        for citation in citations:
+        for citation in st.session_state.citations:
             pdf_name = citation['source']
             page = int(citation['page'])
-            #print(f"Document: {citation['source']}\t Page: {citation['page']}")
-            #print(f"Document: {pdf_name}\t Page: {page}")
             try:
-                #image_path = rag.get_pdf_image(citation)
-                image_path = rag.render_pdf_page_debug(pdf_name, page)
-                #st.image(image_path, caption=f"📄 {citation['source']} – Page {int(citation['page'])}")#, width=600)
+                image_path = rag.render_pdf_page(pdf_name, page)
                 st.image(image_path, caption=f"📄 {pdf_name} – Page {int(page)}")#, width=600)
             except Exception as e:
                 st.warning(f"Couldn't load page image: {e}")
