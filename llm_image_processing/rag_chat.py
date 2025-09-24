@@ -24,6 +24,7 @@ class Rag_Chat:
         self.initialize_pinecone()
         self.initialize_openai()
         self.history = []
+        self.citations = []
         self.previous_response_id = None
     
     def initialize_pinecone(self):
@@ -61,14 +62,14 @@ class Rag_Chat:
 
         if check == True:
             context = self.retrieve_context(query)
-            prompt, citations = self.build_prompt(context, query)
+            prompt, self.citations = self.build_prompt(context, query)
 
             messages = [{"role": "system", "content": self.rag_prompt}, {"role": "user", "content": prompt}]
             
-            return messages, citations
+            return messages, self.citations
         else:
             messages = [{"role":"system", "content":self.rag_not_needed_prompt}, {"role": "user", "content": query}]
-            return messages, None
+            return messages, self.citations
 
     def generate_answer(self, query):
         context = self.retrieve_context(query)
@@ -89,6 +90,8 @@ class Rag_Chat:
 
         return answer, citations
 
+    # Checks if the question needs new Gartner context, or if it should rely on the previous conversation history
+    # If the user asks about the last response, it confuses the LLM when getting new, unrelated context
     def rag_needed_check(self, query, history):
         chat_input = history + [{"role": "system", "content": self.rag_check_prompt}, {"role": "user", "content": query}]
         response = self.client.responses.create(

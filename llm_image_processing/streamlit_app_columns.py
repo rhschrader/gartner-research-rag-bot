@@ -44,9 +44,8 @@ with col1:
                         for m in st.session_state.messages
                     ]
 
-                messages, citations_response = rag.generate_messages(prompt, chat_input) 
-                if citations_response:
-                    citations = citations_response
+                messages, citations = rag.generate_messages(prompt, chat_input) 
+
                 chat_input += messages
 
                 response = client.responses.create(
@@ -78,7 +77,3 @@ with col2:
                 st.image(image_path, caption=f"📄 {pdf_name} – Page {int(page)}")#, width=600)
             except Exception as e:
                 st.warning(f"Couldn't load page image: {e}")
-            
-
-        # Add bot response to chat history
-        #st.session_state.messages.append({"role": "assistant", "content": response})

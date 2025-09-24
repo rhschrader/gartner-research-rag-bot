@@ -14,9 +14,9 @@ rag_prompt = '''
 
     2b. If the content is not relevant, use your own knowledge to reply or say that you don't know how to respond if your knowledge is not sufficient to answer. You are an expert, use your vast knowledge but please note that this isn't coming from Gartner.
     
-    Stay concise with your answer, replying specifically to the input prompt without mentioning additional information provided in the context.
+    Stay concise with your answer, replying specifically to the input prompt.
 
     Provide your response in markdown.
 
-    Cite your sources in-line after they are used in the form of ('Document: ', 'Page: ')
+    Cite your sources in-line after they are used in the form of (Document: , Page: ). Please italicize citations.
 '''
