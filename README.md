@@ -2,13 +2,13 @@
 
 This project is a proof-of-concept for a Retrieval-Augmented Generation (RAG) system that operates on a repository of Gartner research articles. The primary goal of this project is twofold: to serve as a learning experience in building a RAG application and to compare two distinct methods of context parsing from PDF documents.
 
-## 📖 Project Overview
+## Project Overview
 
 The Gartner Research RAG Bot is designed to provide a conversational interface for querying a collection of Gartner research articles. It leverages the power of large language models (LLMs) to understand and respond to user queries in a natural and intuitive way. The project explores and implements two different approaches to extracting information from the source PDF documents, allowing for a comparative analysis of their effectiveness.
 
 ***
 
-## 💡 Solutions
+## Solutions
 
 This project implements two distinct solutions for parsing and querying the Gartner research articles:
 
@@ -22,7 +22,7 @@ This solution employs a more conventional method of PDF parsing. It directly ext
 
 ***
 
-## 🛠️ Technical Details
+## Technical Details
 
 ### Models
 
@@ -40,7 +40,7 @@ This solution employs a more conventional method of PDF parsing. It directly ext
 
 ***
 
-## 🚀 Getting Started
+## Getting Started
 
 To get started with this project, you will need to have Python installed on your system. You will also need to have access to the required API keys for OpenAI and Pinecone.
 
@@ -89,4 +89,24 @@ This will process the PDFs, generate the embeddings, and store them in the Pinec
 ### Solution 2: Traditional PDF Extraction
 To run the traditional PDF extraction workflow, you can use the following command:
 ```bash
-python traditional_pdf_extraction/ingest_and_upsert.py```
+python traditional_pdf_extraction/ingest_and_upsert.py
+```
+This will parse the PDFs, create text chunks, and store the embeddings in Pinecone.
+
+## Chat Interface
+Once the data has been processed and stored, you can interact with the RAG bot using the provided Streamlit application:
+```bash
+streamlit run llm_image_processing/streamlit_app_columns.py
+```
+or
+```bash
+streamlit run traditional_pdf_extraction/streamlit_app.py
+```
+## Future Work
+Implement a more robust evaluation framework to quantitatively compare the performance of the two parsing methods.
+
+Experiment with different embedding models and LLMs to see how they affect the overall performance of the system.
+
+Add support for other document formats, such as DOCX and PPTX.
+
+Develop a more sophisticated user interface with features like conversation history and document highlighting.
