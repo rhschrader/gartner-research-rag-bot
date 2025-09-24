@@ -1,4 +1,8 @@
+# ignore local copies of page images
 *page_images/
+
+# ignore .vscode - this is a domino-created file
+*.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
